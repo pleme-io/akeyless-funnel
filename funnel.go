@@ -172,11 +172,18 @@ func (f *Funnel) closeOperation(op *operationInProcess) {
 		op.panicErr = rr
 	}
 
-	// Deletion of operationInProcess from the map will occur only when the cache time-to-live will be expired.
-	go func() {
-		time.Sleep(f.config.cacheTtl)
-		f.deleteOperation(op)
-	}()
+	if f.config.cacheTtl == 0 {
+		if !op.deleted.IsSet() {
+			delete(f.opInProcess, op.operationId)
+			op.deleted.SetTo(true)
+		}
+	} else {
+		// Deletion of operationInProcess from the map will occur only when the cache time-to-live will be expired.
+		go func() {
+			time.Sleep(f.config.cacheTtl)
+			f.deleteOperation(op)
+		}()
+	}
 
 	// Releases all the goroutines which are waiting for the operation result.
 	close(op.done)

@@ -173,7 +173,10 @@ func (f *Funnel) closeOperation(op *operationInProcess) {
 	}
 
 	if f.config.cacheTtl == 0 {
-		f.deleteOperation(op)
+		if !op.deleted.IsSet() {
+			delete(f.opInProcess, op.operationId)
+			op.deleted.SetTo(true)
+		}
 	} else {
 		// Deletion of operationInProcess from the map will occur only when the cache time-to-live will be expired.
 		go func() {

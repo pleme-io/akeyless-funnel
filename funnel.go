@@ -172,6 +172,9 @@ func (f *Funnel) closeOperation(op *operationInProcess) {
 		op.panicErr = rr
 	}
 
+	// Releases all the goroutines which are waiting for the operation result.
+	close(op.done)
+
 	if f.config.cacheTtl == 0 {
 		if !op.deleted.IsSet() {
 			delete(f.opInProcess, op.operationId)
@@ -184,9 +187,6 @@ func (f *Funnel) closeOperation(op *operationInProcess) {
 			f.deleteOperation(op)
 		}()
 	}
-
-	// Releases all the goroutines which are waiting for the operation result.
-	close(op.done)
 }
 
 // Delete the operation from the map.
